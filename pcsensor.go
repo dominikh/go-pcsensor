@@ -97,6 +97,30 @@ func (s *temperv2) init() error {
 	return nil
 }
 
+func (s *temperv2) Close() error {
+	return s.dev.Close()
+}
+
+func (s *temperv2) Temperatures() (temps Temperatures, err error) {
+	b := make([]byte, reqIntLen)
+	_, err = s.ep.Read(b)
+	if err != nil {
+		return nil, fmt.Errorf("error reading from endpoint: %s", err)
+	}
+	// TODO look up a spec sheet of the sensor to make sense of these
+	// values
+	temp := int16(b[3]&0xFF) + (int16(b[2]) << 8)
+	inner := float64(temp) * (125.0 / 32000.0)
+
+	temp = int16(b[5]&0xFF) + (int16(b[4]) << 8)
+	outer := float64(temp) * (125.0 / 32000.0)
+
+	return Temperatures{
+		"inner": inner,
+		"outer": outer,
+	}, nil
+}
+
 func control(dev *usb.Device, msg []byte) error {
 	_, err := dev.Control(0x21, 0x09, 0x200, 0x01, msg)
 	return err
@@ -120,28 +144,4 @@ func New(ctx *usb.Context) ([]Sensor, error) {
 		return nil, err
 	}
 	return []Sensor{sensor}, nil
-}
-
-func (s *temperv2) Close() error {
-	return s.dev.Close()
-}
-
-func (s *temperv2) Temperatures() (temps Temperatures, err error) {
-	b := make([]byte, reqIntLen)
-	_, err = s.ep.Read(b)
-	if err != nil {
-		return nil, fmt.Errorf("error reading from endpoint: %s", err)
-	}
-	// TODO look up a spec sheet of the sensor to make sense of these
-	// values
-	temp := int16(b[3]&0xFF) + (int16(b[2]) << 8)
-	inner := float64(temp) * (125.0 / 32000.0)
-
-	temp = int16(b[5]&0xFF) + (int16(b[4]) << 8)
-	outer := float64(temp) * (125.0 / 32000.0)
-
-	return Temperatures{
-		"inner": inner,
-		"outer": outer,
-	}, nil
 }
