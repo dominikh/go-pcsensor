@@ -1,5 +1,7 @@
-// Package pcsensor provides a library for reading data from
-// PCSensor/TEMPer2 temperature sensors.
+// Package pcsensor provides a library for reading data from some
+// PCsensor temperature sensors.
+//
+// Currently, only the TEMPer2 device is supported.
 package pcsensor
 
 import (
@@ -15,11 +17,18 @@ const (
 	reqIntLen = 8
 )
 
+// Sensor is a single PCsensor device.
 type Sensor interface {
+	// Temperatures returns all available temperatures from the
+	// sensor.
 	Temperatures() (Temperatures, error)
+	// Close closes the underlying USB handle. This must be called,
+	// even if the program is exiting.
 	Close() error
 }
 
+// Temperatures map sensor names (e.g. "internal" or "external") to
+// measured temperatures, in degrees Celsius.
 type Temperatures map[string]float64
 
 type temperv2 struct {
@@ -93,6 +102,12 @@ func control(dev *usb.Device, msg []byte) error {
 	return err
 }
 
+// New returns all connected sensors.
+//
+// Each sensor must be closed when done using it. Sensors need to be
+// closed even when the program exits, to release USB handles.
+//
+// BUG(dh): Currently, only one sensor will be returned.
 func New(ctx *usb.Context) ([]Sensor, error) {
 	// TODO find all sensors, not just the first
 	dev, err := ctx.OpenDeviceWithVidPid(idVendor, idProduct)
@@ -101,7 +116,7 @@ func New(ctx *usb.Context) ([]Sensor, error) {
 	}
 	sensor := &temperv2{dev: dev}
 	if err = sensor.init(); err != nil {
-		sensor.Close()
+		_ = sensor.Close()
 		return nil, err
 	}
 	return []Sensor{sensor}, nil
