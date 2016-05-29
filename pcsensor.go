@@ -101,19 +101,18 @@ func (s *temperv2) Close() error {
 	return s.dev.Close()
 }
 
+func fm75(b1, b2 byte) float64 {
+	return float64(int16(b1)<<8|int16(b2)) / 256
+}
+
 func (s *temperv2) Temperatures() (temps Temperatures, err error) {
 	b := make([]byte, reqIntLen)
 	_, err = s.ep.Read(b)
 	if err != nil {
 		return nil, fmt.Errorf("error reading from endpoint: %s", err)
 	}
-	// TODO look up a spec sheet of the sensor to make sense of these
-	// values
-	temp := int16(b[3]&0xFF) + (int16(b[2]) << 8)
-	inner := float64(temp) * (125.0 / 32000.0)
-
-	temp = int16(b[5]&0xFF) + (int16(b[4]) << 8)
-	outer := float64(temp) * (125.0 / 32000.0)
+	inner := fm75(b[2], b[3])
+	outer := fm75(b[4], b[5])
 
 	return Temperatures{
 		"inner": inner,
