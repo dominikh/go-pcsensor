@@ -11,11 +11,18 @@ import (
 const (
 	idVendor  = 0x0c45
 	idProduct = 0x7401
+
+	reqIntLen = 8
 )
 
 type Sensor struct {
 	dev *usb.Device
 	ep  usb.Endpoint
+}
+
+func control(dev *usb.Device, msg []byte) error {
+	_, err := dev.Control(0x21, 0x09, 0x200, 0x01, msg)
+	return err
 }
 
 func New(ctx *usb.Context) (sensor *Sensor, err error) {
@@ -32,7 +39,7 @@ func New(ctx *usb.Context) (sensor *Sensor, err error) {
 
 	const interface1 = 0x00
 	const interface2 = 0x01
-	endpoint1, err := dev.OpenEndpoint(0x01, interface1, 0, 0x81)
+	_, err = dev.OpenEndpoint(0x01, interface1, 0, 0x81)
 	if err != nil {
 		return nil, fmt.Errorf("error opening endpoint 1: %s", err)
 	}
@@ -41,61 +48,47 @@ func New(ctx *usb.Context) (sensor *Sensor, err error) {
 		return nil, fmt.Errorf("error opening endpoint 2: %s", err)
 	}
 
-	_ = endpoint1 // XXX
-	_ = endpoint2 // XXX
-
-	// ini_control_transfer(lvr_winusb);
-	_, err = dev.Control(0x21, 0x09, 0x0201, 0x00, []byte{0x01, 0x01})
+	_, err = dev.Control(0x21, 0x09, 0x0201, interface1, []byte{0x01, 0x01})
 	if err != nil {
 		return nil, fmt.Errorf("error communicating with sensor: %s", err)
 	}
 
-	// control_transfer(lvr_winusb, uTemperatura );
-	uTemperatura := []byte{0x01, 0x80, 0x33, 0x01, 0x00, 0x00, 0x00, 0x00}
-	_, err = dev.Control(0x21, 0x09, 0x0200, 0x01, uTemperatura)
+	uTemperature := []byte{0x01, 0x80, 0x33, 0x01, 0x00, 0x00, 0x00, 0x00}
+	err = control(dev, uTemperature)
 	if err != nil {
 		return nil, fmt.Errorf("error communicating with sensor: %s", err)
 	}
-
-	// interrupt_read(lvr_winusb);
-	const reqIntLen = 8
 	b := make([]byte, reqIntLen)
 	_, err = endpoint2.Read(b)
 	if err != nil {
 		return nil, fmt.Errorf("error reading from endpoint: %s", err)
 	}
 
-	// control_transfer(lvr_winusb, uIni1 );
 	uIni1 := []byte{0x01, 0x82, 0x77, 0x01, 0x00, 0x00, 0x00, 0x00}
-	_, err = dev.Control(0x21, 0x09, 0x0200, 0x01, uIni1)
+	err = control(dev, uIni1)
 	if err != nil {
 		return nil, fmt.Errorf("error communicating with sensor: %s", err)
 	}
-	// interrupt_read(lvr_winusb);
 	_, err = endpoint2.Read(b)
 	if err != nil {
 		return nil, fmt.Errorf("error reading from endpoint: %s", err)
 	}
 
-	// control_transfer(lvr_winusb, uIni2 );
 	uIni2 := []byte{0x01, 0x86, 0xff, 0x01, 0x00, 0x00, 0x00, 0x00}
-	_, err = dev.Control(0x21, 0x09, 0x0200, 0x01, uIni2)
+	err = control(dev, uIni2)
 	if err != nil {
 		return nil, fmt.Errorf("error communicating with sensor: %s", err)
 	}
-	// interrupt_read(lvr_winusb);
 	_, err = endpoint2.Read(b)
 	if err != nil {
 		return nil, fmt.Errorf("error reading from endpoint: %s", err)
 	}
-	// interrupt_read(lvr_winusb);
 	_, err = endpoint2.Read(b)
 	if err != nil {
 		return nil, fmt.Errorf("error reading from endpoint: %s", err)
 	}
 
-	// control_transfer(lvr_winusb, uTemperatura );
-	_, err = dev.Control(0x21, 0x09, 0x0200, 0x01, uTemperatura)
+	err = control(dev, uTemperature)
 	if err != nil {
 		return nil, fmt.Errorf("error communicating with sensor: %s", err)
 	}
@@ -108,8 +101,7 @@ func (s *Sensor) Close() error {
 }
 
 func (s *Sensor) Temperatures() (inner, outer float64, err error) {
-	// interrupt_read_temperatura(lvr_winusb, &tempInC, &tempOutC);
-	b := make([]byte, 8) // XXX
+	b := make([]byte, reqIntLen)
 	_, err = s.ep.Read(b)
 	if err != nil {
 		return 0, 0, fmt.Errorf("error reading from endpoint: %s", err)
