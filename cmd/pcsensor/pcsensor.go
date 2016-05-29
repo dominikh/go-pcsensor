@@ -3,16 +3,19 @@ package main
 import (
 	"log"
 
-	"github.com/kylelemons/gousb/usb"
 	"honnef.co/go/pcsensor"
+
+	"github.com/kylelemons/gousb/usb"
 )
 
 func main() {
 	ctx := usb.NewContext()
-	sensor, err := pcsensor.New(ctx)
+	sensors, err := pcsensor.New(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer sensor.Close()
-	log.Println(sensor.Temperatures())
+	for _, sensor := range sensors {
+		defer sensor.Close()
+		log.Println(sensor.Temperatures())
+	}
 }

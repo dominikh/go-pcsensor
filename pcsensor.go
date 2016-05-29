@@ -93,7 +93,7 @@ func control(dev *usb.Device, msg []byte) error {
 	return err
 }
 
-func New(ctx *usb.Context) (Sensor, error) {
+func New(ctx *usb.Context) ([]Sensor, error) {
 	// TODO find all sensors, not just the first
 	dev, err := ctx.OpenDeviceWithVidPid(idVendor, idProduct)
 	if err != nil {
@@ -104,7 +104,7 @@ func New(ctx *usb.Context) (Sensor, error) {
 		sensor.Close()
 		return nil, err
 	}
-	return sensor, nil
+	return []Sensor{sensor}, nil
 }
 
 func (s *temperv2) Close() error {
