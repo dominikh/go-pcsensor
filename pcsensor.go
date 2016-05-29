@@ -108,8 +108,8 @@ func (s *temper2v13) Temperatures() (temps Temperatures, err error) {
 	outer := fm75(b[4], b[5])
 
 	return Temperatures{
-		"inner": inner,
-		"outer": outer,
+		"internal": inner,
+		"external": outer,
 	}, nil
 }
 
