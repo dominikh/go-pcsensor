@@ -18,8 +18,6 @@ const (
 	reqIntLen = 8
 )
 
-var uTemperature = []byte{0x01, 0x80, 0x33, 0x01, 0x00, 0x00, 0x00, 0x00}
-
 // Sensor is a single PCsensor device.
 type Sensor interface {
 	// Temperatures returns all available temperatures from the
@@ -57,16 +55,7 @@ func (s *temperv2) init() error {
 		return fmt.Errorf("error communicating with sensor: %s", err)
 	}
 
-	err = control(s.dev, uTemperature)
-	if err != nil {
-		return fmt.Errorf("error communicating with sensor: %s", err)
-	}
 	b := make([]byte, reqIntLen)
-	_, err = endpoint2.Read(b)
-	if err != nil {
-		return fmt.Errorf("error reading from endpoint: %s", err)
-	}
-
 	uIni1 := []byte{0x01, 0x82, 0x77, 0x01, 0x00, 0x00, 0x00, 0x00}
 	err = control(s.dev, uIni1)
 	if err != nil {
@@ -105,6 +94,7 @@ func fm75(b1, b2 byte) float64 {
 }
 
 func (s *temperv2) Temperatures() (temps Temperatures, err error) {
+	uTemperature := []byte{0x01, 0x80, 0x33, 0x01, 0x00, 0x00, 0x00, 0x00}
 	err = control(s.dev, uTemperature)
 	if err != nil {
 		return nil, fmt.Errorf("error communicating with sensor: %s", err)
