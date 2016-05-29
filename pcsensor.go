@@ -32,12 +32,12 @@ type Sensor interface {
 // measured temperatures, in degrees Celsius.
 type Temperatures map[string]float64
 
-type temperv2 struct {
+type temper2v13 struct {
 	dev *usb.Device
 	ep  usb.Endpoint
 }
 
-func (s *temperv2) init() error {
+func (s *temper2v13) init() error {
 	const interface1 = 0x00
 	const interface2 = 0x01
 	_, err := s.dev.OpenEndpoint(0x01, interface1, 0, 0x81)
@@ -82,7 +82,7 @@ func (s *temperv2) init() error {
 	return nil
 }
 
-func (s *temperv2) Close() error {
+func (s *temper2v13) Close() error {
 	return s.dev.Close()
 }
 
@@ -93,7 +93,7 @@ func fm75(b1, b2 byte) float64 {
 	return float64(int16(b1)<<8|int16(b2)) / 256
 }
 
-func (s *temperv2) Temperatures() (temps Temperatures, err error) {
+func (s *temper2v13) Temperatures() (temps Temperatures, err error) {
 	uTemperature := []byte{0x01, 0x80, 0x33, 0x01, 0x00, 0x00, 0x00, 0x00}
 	err = control(s.dev, uTemperature)
 	if err != nil {
@@ -130,7 +130,7 @@ func New(ctx *usb.Context) ([]Sensor, error) {
 	if err != nil {
 		return nil, err
 	}
-	sensor := &temperv2{dev: dev}
+	sensor := &temper2v13{dev: dev}
 	if err = sensor.init(); err != nil {
 		_ = sensor.Close()
 		return nil, err
