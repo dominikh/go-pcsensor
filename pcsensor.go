@@ -2,7 +2,7 @@
 // PCsensor temperature sensors.
 //
 // Currently, only the TEMPer2 device is supported.
-package pcsensor
+package pcsensor // import "honnef.co/go/pcsensor"
 
 import (
 	"fmt"
