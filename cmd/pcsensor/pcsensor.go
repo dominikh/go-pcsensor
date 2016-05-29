@@ -8,8 +8,7 @@ import (
 	"time"
 
 	"honnef.co/go/pcsensor"
-
-	"github.com/kylelemons/gousb/usb"
+	"honnef.co/go/usb/usb"
 )
 
 func main() {

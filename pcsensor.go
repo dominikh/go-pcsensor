@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/kylelemons/gousb/usb"
+	"honnef.co/go/usb/usb"
 )
 
 const (
