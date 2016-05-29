@@ -6,6 +6,7 @@ package pcsensor
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/kylelemons/gousb/usb"
 )
@@ -97,6 +98,9 @@ func (s *temperv2) Close() error {
 }
 
 func fm75(b1, b2 byte) float64 {
+	if b1 == 255 && b2 == 255 {
+		return math.NaN()
+	}
 	return float64(int16(b1)<<8|int16(b2)) / 256
 }
 
